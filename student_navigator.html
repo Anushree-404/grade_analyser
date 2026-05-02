@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Student Grade Analyser</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f5f7fa;
+  --surface:#ffffff;
+  --surface2:#f0f4f8;
+  --sidebar-bg:#ffffff;
+  --border:#e4e9f0;
+  --border2:#d1dae6;
+  --accent:#3b82f6;
+  --accent-light:#eff6ff;
+  --accent-mid:#bfdbfe;
+  --success:#10b981;
+  --success-light:#ecfdf5;
+  --danger:#ef4444;
+  --danger-light:#fef2f2;
+  --warn:#f59e0b;
+  --warn-light:#fffbeb;
+  --text:#1e2d3d;
+  --text2:#4a5568;
+  --muted:#8896a5;
+  --font:'Plus Jakarta Sans',sans-serif;
+  --r:14px;--rs:9px;
+  --shadow:0 1px 4px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.05);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.08),0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);color:var(--text);min-height:100vh;background:var(--bg);overflow-x:hidden;}
+
+/* ── DECORATIVE BACKGROUND ── */
+.bg-deco{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.deco-circle{position:absolute;border-radius:50%;opacity:0.07;}
+.dc1{width:700px;height:700px;top:-300px;right:-200px;background:radial-gradient(circle,#3b82f6,transparent 70%);}
+.dc2{width:500px;height:500px;bottom:-200px;left:-100px;background:radial-gradient(circle,#10b981,transparent 70%);}
+.dc3{width:350px;height:350px;top:40%;right:5%;background:radial-gradient(circle,#f59e0b,transparent 70%);opacity:0.05;}
+/* Subtle grid */
+.deco-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:0.4;}
+
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:248px;flex-shrink:0;
+  background:var(--sidebar-bg);
+  border-right:1px solid var(--border);
+  padding:26px 18px;
+  display:flex;flex-direction:column;gap:20px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  box-shadow:2px 0 12px rgba(0,0,0,0.04);
+}
+.sidebar::-webkit-scrollbar{width:3px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+.brand{display:flex;align-items:center;gap:12px;padding-bottom:4px;}
+.brand-icon{width:42px;height:42px;background:linear-gradient(135deg,#3b82f6,#60a5fa);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 4px 12px rgba(59,130,246,0.3);}
+.brand-text{}
+.brand-name{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.2;}
+.brand-sub{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+
+.sdiv{border:none;border-top:1px solid var(--border);margin:0 -2px;}
+
+.flbl{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block;}
+
+.sinp{width:100%;padding:9px 12px 9px 34px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);font-family:var(--font);font-size:13px;font-weight:500;color:var(--text);outline:none;transition:all .18s;position:relative;}
+.sinp:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,0.12);}
+.sinp::placeholder{color:var(--muted);}
+.sinp-wrap{position:relative;}
+.sinp-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;}
+.autocomplete-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--accent-mid);border-radius:var(--rs);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:999;max-height:200px;overflow-y:auto;display:none;}
+.autocomplete-list.show{display:block;}
+.ac-item{padding:9px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .12s;}
+.ac-item:hover,.ac-item.selected{background:var(--accent-light);}
+.ac-avatar{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;}
+.ac-rank{font-size:10px;color:var(--muted);font-weight:500;margin-left:auto;}
+.ac-empty{padding:10px 14px;font-size:12px;color:var(--muted);font-style:italic;}
+.sinp-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:14px;cursor:pointer;color:var(--muted);display:none;background:none;border:none;padding:0;line-height:1;}
+.sinp-clear.show{display:block;}
+
+.chip-row{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{padding:5px 11px;border-radius:100px;border:1.5px solid var(--border);background:var(--surface2);font-family:var(--font);font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .18s;}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(59,130,246,0.25);}
+.chip:hover:not(.on){border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+
+.sldr-row{display:flex;flex-direction:column;gap:6px;}
+.sldr-top{display:flex;justify-content:space-between;align-items:center;}
+.sldr-val{font-size:12px;font-weight:700;color:var(--accent);}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:5px;}
+
+.side-grid{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sg-item{}
+.sg-val{font-size:18px;font-weight:800;color:var(--text);line-height:1.2;}
+.sg-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:1px;}
+
+/* ── MAIN ── */
+.main{flex:1;padding:30px 36px;overflow-x:hidden;}
+
+/* ── HEADER ── */
+.hdr{margin-bottom:26px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.hdr-left{}
+.hdr-eye{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+.hdr-title{font-size:36px;font-weight:800;color:var(--text);letter-spacing:-.03em;line-height:1.1;}
+.hdr-title span{color:var(--accent);}
+.hdr-sub{font-size:13px;color:var(--muted);margin-top:6px;font-weight:500;}
+.hdr-badge{background:var(--accent-light);color:var(--accent);font-size:11px;font-weight:700;padding:5px 14px;border-radius:100px;border:1px solid var(--accent-mid);letter-spacing:.04em;white-space:nowrap;}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+.mcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;box-shadow:var(--shadow);}
+.mcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+.mcard-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0;}
+.mcard-icon{font-size:20px;margin-bottom:10px;}
+.mcard-val{font-size:28px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px;}
+.mcard-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+
+/* ── NAVIGATOR ── */
+.nav{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;box-shadow:var(--shadow);}
+.nav-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.nav-btn{padding:8px 18px;border-radius:var(--rs);background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:all .18s;box-shadow:0 2px 8px rgba(59,130,246,0.25);white-space:nowrap;}
+.nav-btn:hover{background:#2563eb;transform:translateY(-1px);box-shadow:0 4px 16px rgba(59,130,246,0.35);}
+.nav-sel{flex:1;padding:8px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);font-family:var(--font);font-size:13px;font-weight:600;color:var(--text);outline:none;cursor:pointer;transition:border .18s;min-width:150px;}
+.nav-sel:focus{border-color:var(--accent);}
+.nav-ctr{font-size:12px;color:var(--muted);white-space:nowrap;font-weight:700;}
+
+/* ── BANNER ── */
+.banner{background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:1px solid var(--accent-mid);border-radius:var(--r);padding:20px 26px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:18px;box-shadow:0 4px 20px rgba(59,130,246,0.08);}
+.b-left{display:flex;align-items:center;gap:16px;}
+.bav{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,0.15);}
+.b-name{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.1;}
+.b-meta{font-size:11px;color:var(--muted);font-weight:500;margin-top:4px;letter-spacing:.04em;}
+.b-right{display:flex;align-items:center;gap:32px;flex-wrap:wrap;}
+.bstat{text-align:center;}
+.bstat-val{font-size:34px;font-weight:800;line-height:1;}
+.bstat-lbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+
+/* ── CONTENT ── */
+.cgrid{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);}
+.clbl{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
+
+/* ── CHART ── */
+.cleg{display:flex;gap:16px;margin-bottom:14px;}
+.cleg-i{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);font-weight:600;}
+.cleg-d{width:11px;height:11px;border-radius:3px;}
+
+.chart-wrap{position:relative;height:280px;display:flex;align-items:flex-end;gap:10px;padding:0 0 46px 44px;}
+.yax{position:absolute;left:0;top:0;bottom:46px;display:flex;flex-direction:column;justify-content:space-between;font-size:10px;font-weight:600;color:var(--muted);text-align:right;width:40px;}
+.gov{position:absolute;left:44px;right:0;top:0;bottom:46px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;}
+.gl{border-top:1px dashed var(--border2);}
+.cgrp{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;position:relative;}
+.cbars{display:flex;gap:4px;align-items:flex-end;height:100%;justify-content:center;width:100%;}
+.cbar{width:26px;border-radius:5px 5px 0 0;position:relative;cursor:pointer;transition:filter .15s,transform .15s;}
+.cbar:hover{filter:brightness(0.9);transform:scaleY(1.02);transform-origin:bottom;}
+.cbar-s{background:linear-gradient(180deg,#60a5fa,#3b82f6);}
+.cbar-a{background:linear-gradient(180deg,#fcd34d,#f59e0b);opacity:.85;}
+.ctip{position:absolute;bottom:calc(100%+6px);left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;z-index:20;}
+.ctip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--text);}
+.cbar:hover .ctip{opacity:1;}
+.cxlbl{font-size:12px;font-weight:600;color:var(--text2);position:absolute;bottom:-22px;text-align:center;width:100%;}
+.cdiff{font-size:10px;font-weight:800;position:absolute;bottom:-40px;text-align:center;width:100%;}
+
+/* ── INSIGHT STRIP ── */
+.insight-strip{
+  background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);
+  border:1px solid var(--accent-mid);border-radius:var(--r);
+  padding:14px 22px;margin-bottom:18px;
+  box-shadow:var(--shadow);
+  display:flex;align-items:flex-start;gap:14px;
+}
+.ins-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.ins-body{}
+.ins-lbl{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+.ins-txt{font-size:13px;line-height:1.65;color:var(--text2);font-weight:500;}
+.ins-txt strong{color:var(--text);font-weight:800;}
+.ins-tags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.ins-tag{font-size:11px;font-weight:700;padding:3px 12px;border-radius:100px;border:1px solid;}
+
+/* ── SUBJECT BREAKDOWN HORIZONTAL ── */
+.slist-h{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.sitem{display:flex;flex-direction:column;gap:7px;}
+.smeta{display:flex;justify-content:space-between;align-items:center;}
+.sname{font-size:13px;font-weight:700;color:var(--text);}
+.spair{display:flex;align-items:center;gap:8px;}
+.savglbl{font-size:11px;color:var(--muted);font-weight:500;background:var(--surface2);padding:2px 8px;border-radius:100px;}
+.sscore{font-size:17px;font-weight:800;color:var(--text);}
+.track{height:8px;background:var(--surface2);border-radius:10px;overflow:hidden;position:relative;border:1px solid var(--border);}
+.fill{height:100%;border-radius:10px;transition:width .65s cubic-bezier(.4,0,.2,1);}
+.amk{position:absolute;top:0;height:100%;width:2.5px;background:var(--warn);border-radius:2px;}
+.rlist{display:flex;flex-direction:column;gap:4px;}
+.ritem{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rs);transition:background .14s;cursor:default;}
+.ritem:hover{background:var(--surface2);}
+.ritem.cur{background:var(--accent-light);border:1px solid var(--accent-mid);}
+.rnum{font-size:13px;font-weight:800;width:22px;text-align:center;flex-shrink:0;color:var(--muted);}
+.rnum.gold{color:var(--warn);}
+.rav{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;color:#fff;}
+.rname{flex:1;font-size:13px;font-weight:600;color:var(--text);}
+.rbadge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:100px;border:1px solid;}
+.ravg{font-size:13px;font-weight:800;color:var(--accent);margin-left:2px;}
+
+
+
+/* ── BOTTOM ── */
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.mcard{animation:fadeUp .4s ease both;}
+.mcard:nth-child(1){animation-delay:.04s;}
+.mcard:nth-child(2){animation-delay:.08s;}
+.mcard:nth-child(3){animation-delay:.12s;}
+.mcard:nth-child(4){animation-delay:.17s;}
+.mcard:nth-child(5){animation-delay:.22s;}
+.banner,.card{animation:fadeUp .4s ease both;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1140px){.cgrid{grid-template-columns:1fr;}.metrics{grid-template-columns:repeat(3,1fr);}.bgrid{grid-template-columns:1fr;}}
+@media(max-width:860px){.app{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;box-shadow:none;border-right:none;border-bottom:1px solid var(--border);}.main{padding:20px 16px;}.metrics{grid-template-columns:repeat(2,1fr);}.hdr-title{font-size:28px;}.b-right{gap:20px;}.bstat-val{font-size:26px;}}
+</style>
+</head>
+<body>
+
+<!-- Decorative background -->
+<div class="bg-deco">
+  <div class="deco-grid"></div>
+  <div class="deco-circle dc1"></div>
+  <div class="deco-circle dc2"></div>
+  <div class="deco-circle dc3"></div>
+</div>
+
+<div class="app">
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">🎓</div>
+    <div class="brand-text">
+      <div class="brand-name">Grade Analyser</div>
+      <div class="brand-sub">Batch 2024–25</div>
+    </div>
+  </div>
+  <hr class="sdiv"/>
+
+  <div>
+    <span class="flbl">Search Student</span>
+    <div class="sinp-wrap" style="position:relative;">
+      <span class="sinp-icon">🔍</span>
+      <input class="sinp" id="sinp" type="text" placeholder="Type a name…" oninput="onSearch()" onkeydown="onSearchKey(event)" autocomplete="off"/>
+      <button class="sinp-clear" id="sinpClear" onclick="clearSearch()">✕</button>
+      <div class="autocomplete-list" id="acList"></div>
+    </div>
+  </div>
+
+  <div>
+    <span class="flbl">Filter by Grade</span>
+    <div class="chip-row" id="gchips"></div>
+  </div>
+
+  <div>
+    <span class="flbl">Filter by Result</span>
+    <div class="chip-row">
+      <button class="chip on" data-result="PASS" onclick="toggleR(this)">✅ Pass</button>
+      <button class="chip on" data-result="FAIL" onclick="toggleR(this)">❌ Fail</button>
+    </div>
+  </div>
+
+  <div class="sldr-row">
+    <div class="sldr-top">
+      <span class="flbl" style="margin-bottom:0">Min Average</span>
+      <span class="sldr-val" id="sval">0%</span>
+    </div>
+    <input type="range" id="minavg" min="0" max="100" value="0" oninput="document.getElementById('sval').textContent=this.value+'%';applyFilters()"/>
+  </div>
+
+  <hr class="sdiv"/>
+  <div class="side-grid" id="sideGrid"></div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="hdr-eye">Academic Performance System</div>
+      <div class="hdr-title">Student Grade <span>Analyser</span></div>
+      <div class="hdr-sub" id="hdrsub"></div>
+    </div>
+    <div class="hdr-badge" id="hdrbadge"></div>
+  </div>
+
+  <div class="metrics" id="metrics"></div>
+
+  <div class="nav">
+    <span class="nav-lbl">Navigator</span>
+    <button class="nav-btn" onclick="prevS()">◀ Prev</button>
+    <button class="nav-btn" onclick="nextS()">Next ▶</button>
+    <select class="nav-sel" id="navsel" onchange="pickS(this.value)"></select>
+    <span class="nav-ctr" id="navctr"></span>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <!-- Insight strip — right below banner, always visible -->
+  <div class="insight-strip" id="insight"></div>
+
+  <div class="cgrid">
+    <!-- Left -->
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <!-- Chart + Score Breakdown side by side -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div class="clbl" id="chartlbl" style="margin-bottom:0"></div>
+          <div class="cleg">
+            <div class="cleg-i"><div class="cleg-d" style="background:#3b82f6"></div>Student</div>
+            <div class="cleg-i"><div class="cleg-d" style="background:#f59e0b"></div>Class Avg</div>
+          </div>
+        </div>
+        <div class="chart-wrap" id="chartWrap">
+          <div class="yax" id="yax"></div>
+          <div class="gov" id="gov"></div>
+        </div>
+      </div>
+
+      <!-- Score Breakdown — full width below chart -->
+      <div class="card">
+        <div class="clbl">📚 Score Breakdown vs Class Average</div>
+        <div class="slist-h" id="slist"></div>
+      </div>
+
+      <!-- Bottom Charts -->
+      <div class="bgrid">
+        <div class="card">
+          <div class="clbl">🎓 Grade Distribution</div>
+          <div id="gdist"></div>
+        </div>
+        <div class="card">
+          <div class="clbl">📐 Subject Averages</div>
+          <div id="subjavg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="clbl">🏆 Top 10 Ranking</div>
+        <div class="rlist" id="rlist"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+const RAW=[
+  {Name:"Aarav",  Math:88,Science:76,English:82,History:70},
+  {Name:"Priya",  Math:72,Science:68,English:74,History:65},
+  {Name:"Rahul",  Math:45,Science:52,English:60,History:38},
+  {Name:"Sneha",  Math:91,Science:87,English:78,History:82},
+  {Name:"Arjun",  Math:60,Science:74,English:55,History:58},
+  {Name:"Divya",  Math:55,Science:48,English:63,History:72},
+  {Name:"Kiran",  Math:78,Science:82,English:71,History:66},
+  {Name:"Meera",  Math:83,Science:79,English:85,History:77},
+  {Name:"Rohan",  Math:39,Science:42,English:50,History:35},
+  {Name:"Ananya", Math:95,Science:92,English:88,History:90},
+  {Name:"Vijay",  Math:67,Science:61,English:73,History:55},
+  {Name:"Lakshmi",Math:50,Science:58,English:65,History:60},
+  {Name:"Dev",    Math:74,Science:70,English:68,History:63},
+  {Name:"Pooja",  Math:88,Science:80,English:76,History:71},
+  {Name:"Sanjay", Math:30,Science:35,English:40,History:28},
+  {Name:"Aditya", Math:85,Science:90,English:79,History:84},
+  {Name:"Nisha",  Math:62,Science:58,English:70,History:54},
+  {Name:"Ravi",   Math:77,Science:71,English:68,History:73},
+  {Name:"Kavya",  Math:93,Science:89,English:91,History:87},
+  {Name:"Suresh", Math:41,Science:45,English:38,History:50},
+  {Name:"Deepa",  Math:68,Science:72,English:75,History:69},
+  {Name:"Harish", Math:56,Science:49,English:61,History:44},
+  {Name:"Tanya",  Math:80,Science:84,English:88,History:76},
+  {Name:"Mohit",  Math:35,Science:40,English:42,History:32},
+  {Name:"Shruti", Math:71,Science:65,English:74,History:68},
+  {Name:"Farhan", Math:88,Science:83,English:77,History:85},
+  {Name:"Ishaan", Math:64,Science:70,English:58,History:62},
+  {Name:"Nandita",Math:79,Science:75,English:82,History:71},
+  {Name:"Bharath",Math:52,Science:47,English:55,History:48},
+  {Name:"Simran", Math:90,Science:86,English:92,History:88}
+];
+const SUBS=["Math","Science","English","History"];
+const GRADES=["A+","A","B","C","D","F"];
+
+// Light palette for grade colors
+const GC={
+  "A+":"#059669","A":"#10b981","B":"#3b82f6","C":"#f59e0b","D":"#f97316","F":"#ef4444"
+};
+const GCL={
+  "A+":"#ecfdf5","A":"#ecfdf5","B":"#eff6ff","C":"#fffbeb","D":"#fff7ed","F":"#fef2f2"
+};
+const GCB={
+  "A+":"#a7f3d0","A":"#a7f3d0","B":"#bfdbfe","C":"#fde68a","D":"#fed7aa","F":"#fecaca"
+};
+// Avatar bg colors — soft tones
+const AC=["#3b82f6","#0891b2","#059669","#d97706","#dc2626","#7c3aed","#0284c7","#16a34a","#ea580c","#be185d"];
+
+function gradeOf(a){if(a>=90)return"A+";if(a>=80)return"A";if(a>=70)return"B";if(a>=60)return"C";if(a>=40)return"D";return"F";}
+function passOf(r){return SUBS.every(s=>r[s]>=40)?"PASS":"FAIL";}
+
+const ALL=RAW.map((r,i)=>{
+  const tot=SUBS.reduce((a,s)=>a+r[s],0);
+  const avg=+(tot/SUBS.length).toFixed(2);
+  return{...r,Total:tot,Average:avg,Grade:gradeOf(avg),Result:passOf(r),_i:i};
+});
+[...ALL].sort((a,b)=>b.Average-a.Average).forEach((r,i)=>r.Rank=i+1);
+const CAVG={};
+SUBS.forEach(s=>{CAVG[s]=+(ALL.reduce((a,r)=>a+r[s],0)/ALL.length).toFixed(1);});
+
+let filtered=[...ALL].sort((a,b)=>a.Rank-b.Rank);
+let ci=0,aG=new Set(GRADES),aR=new Set(["PASS","FAIL"]);
+
+// Grade chips
+const gcEl=document.getElementById("gchips");
+GRADES.forEach(g=>{
+  const b=document.createElement("button");
+  b.className="chip on";b.dataset.grade=g;b.textContent=g;
+  b.onclick=()=>{
+    if(aG.has(g)){if(aG.size>1){aG.delete(g);b.classList.remove("on");}}
+    else{aG.add(g);b.classList.add("on");}
+    applyFilters();
+  };
+  gcEl.appendChild(b);
+});
+
+function toggleR(b){
+  const r=b.dataset.result;
+  if(aR.has(r)){if(aR.size>1){aR.delete(r);b.classList.remove("on");}}
+  else{aR.add(r);b.classList.add("on");}
+  applyFilters();
+}
+
+// acIndex tracks keyboard nav in autocomplete
+let acIndex=-1;
+
+function applyFilters(){
+  const mn=+document.getElementById("minavg").value;
+  // Filters affect the stats/metrics but navigator always shows ALL students
+  filtered=ALL.filter(r=>aG.has(r.Grade)&&aR.has(r.Result)&&r.Average>=mn).sort((a,b)=>a.Rank-b.Rank);
+  // Keep current student if still in filtered, else reset
+  if(filtered.length && !filtered.find(r=>r===ALL[ci])) ci=0;
+  renderAll();
+}
+
+// ── AUTOCOMPLETE SEARCH ──
+function onSearch(){
+  const q=document.getElementById("sinp").value.trim().toLowerCase();
+  const clearBtn=document.getElementById("sinpClear");
+  clearBtn.classList.toggle("show", q.length>0);
+  acIndex=-1;
+  if(!q){closeAC();return;}
+  const matches=ALL.filter(r=>r.Name.toLowerCase().includes(q)).slice(0,8);
+  renderAC(matches,q);
+}
+
+function renderAC(matches,q){
+  const list=document.getElementById("acList");
+  if(!matches.length){
+    list.innerHTML=`<div class="ac-empty">No student found for "${q}"</div>`;
+    list.classList.add("show");return;
+  }
+  list.innerHTML=matches.map((r,i)=>{
+    const ac=AC[r._i%AC.length];
+    const hi=r.Name.replace(new RegExp(`(${q})`,"gi"),'<mark style="background:#bfdbfe;border-radius:2px;padding:0 1px">$1</mark>');
+    return`<div class="ac-item" data-name="${r.Name}" onmousedown="selectAC('${r.Name}')">
+      <div class="ac-avatar" style="background:${ac}">${r.Name[0]}</div>
+      <span>${hi}</span>
+      <span class="ac-rank">Rank #${r.Rank} · ${r.Grade}</span>
+    </div>`;
+  }).join("");
+  list.classList.add("show");
+}
+
+function selectAC(name){
+  document.getElementById("sinp").value=name;
+  document.getElementById("sinpClear").classList.add("show");
+  closeAC();
+  // Navigate to that student
+  const idx=ALL.findIndex(r=>r.Name===name);
+  if(idx>=0){
+    // find in filtered or show all
+    let fi=filtered.findIndex(r=>r.Name===name);
+    if(fi<0){
+      // student filtered out — reset filters to show them
+      filtered=[...ALL].sort((a,b)=>a.Rank-b.Rank);
+      fi=filtered.findIndex(r=>r.Name===name);
+    }
+    ci=fi>=0?fi:0;
+    renderAll();
+  }
+}
+
+function clearSearch(){
+  document.getElementById("sinp").value="";
+  document.getElementById("sinpClear").classList.remove("show");
+  closeAC();
+  applyFilters();
+}
+
+function closeAC(){
+  document.getElementById("acList").classList.remove("show");
+  acIndex=-1;
+}
+
+function onSearchKey(e){
+  const list=document.getElementById("acList");
+  const items=list.querySelectorAll(".ac-item");
+  if(!items.length)return;
+  if(e.key==="ArrowDown"){e.preventDefault();acIndex=Math.min(acIndex+1,items.length-1);items.forEach((it,i)=>it.classList.toggle("selected",i===acIndex));}
+  else if(e.key==="ArrowUp"){e.preventDefault();acIndex=Math.max(acIndex-1,0);items.forEach((it,i)=>it.classList.toggle("selected",i===acIndex));}
+  else if(e.key==="Enter"){e.preventDefault();if(acIndex>=0&&items[acIndex])selectAC(items[acIndex].dataset.name);}
+  else if(e.key==="Escape"){closeAC();}
+}
+
+// Close autocomplete when clicking outside
+document.addEventListener("click",e=>{if(!e.target.closest(".sinp-wrap"))closeAC();});
+
+function prevS(){ci=(ci-1+filtered.length)%filtered.length;render();}
+function nextS(){ci=(ci+1)%filtered.length;render();}
+function pickS(n){
+  // Try to find in filtered first; if not, just navigate ALL
+  let fi=filtered.findIndex(r=>r.Name===n);
+  if(fi>=0){ci=fi;}
+  else{
+    // reset filters to show this student
+    filtered=[...ALL].sort((a,b)=>a.Rank-b.Rank);
+    ci=filtered.findIndex(r=>r.Name===n);
+    if(ci<0)ci=0;
+  }
+  render();
+}
+
+function renderAll(){rMetrics();rNav();rBanner();rChart();rSubs();rRank();rBottom();rSide();}
+function render(){rNav();rBanner();rChart();rSubs();rRank();}
+
+function rMetrics(){
+  const n=filtered.length,tot=ALL.length;
+  const avg=n?+(filtered.reduce((a,r)=>a+r.Average,0)/n).toFixed(1):0;
+  const hi=n?Math.max(...filtered.map(r=>r.Average)):0;
+  const pa=filtered.filter(r=>r.Result==="PASS").length;
+  const fa=filtered.filter(r=>r.Result==="FAIL").length;
+  document.getElementById("hdrsub").textContent=`Viewing ${n} of ${tot} students`;
+  document.getElementById("hdrbadge").textContent=`📅 Batch 2024–25`;
+  document.getElementById("metrics").innerHTML=`
+    <div class="mcard"><div class="mcard-bar" style="background:linear-gradient(90deg,#3b82f6,#60a5fa)"></div><div class="mcard-icon">👥</div><div class="mcard-val">${n}</div><div class="mcard-lbl">Students</div></div>
+    <div class="mcard"><div class="mcard-bar" style="background:linear-gradient(90deg,#0891b2,#38bdf8)"></div><div class="mcard-icon">📊</div><div class="mcard-val">${avg}%</div><div class="mcard-lbl">Class Avg</div></div>
+    <div class="mcard"><div class="mcard-bar" style="background:linear-gradient(90deg,#f59e0b,#fcd34d)"></div><div class="mcard-icon">🏆</div><div class="mcard-val">${hi}%</div><div class="mcard-lbl">Highest</div></div>
+    <div class="mcard"><div class="mcard-bar" style="background:linear-gradient(90deg,#10b981,#34d399)"></div><div class="mcard-icon">✅</div><div class="mcard-val" style="color:#059669">${pa}</div><div class="mcard-lbl">Passed</div></div>
+    <div class="mcard"><div class="mcard-bar" style="background:linear-gradient(90deg,#ef4444,#f87171)"></div><div class="mcard-icon">❌</div><div class="mcard-val" style="color:#dc2626">${fa}</div><div class="mcard-lbl">Failed</div></div>
+  `;
+}
+
+function rNav(){
+  const sel=document.getElementById("navsel");
+  // Always show ALL 30 students in the dropdown, sorted by rank
+  const allSorted=[...ALL].sort((a,b)=>a.Rank-b.Rank);
+  sel.innerHTML=allSorted.map(r=>`<option value="${r.Name}">#${r.Rank} ${r.Name} (${r.Grade})</option>`).join("");
+  if(filtered[ci])sel.value=filtered[ci].Name;
+  document.getElementById("navctr").textContent=`${String(ci+1).padStart(2,"0")} / ${String(filtered.length).padStart(2,"0")}`;
+}
+
+function rBanner(){
+  if(!filtered.length){document.getElementById("banner").innerHTML="<span style='color:var(--muted)'>No students match the current filters.</span>";return;}
+  const r=filtered[ci];
+  const gc=GC[r.Grade]||"#3b82f6";
+  const gcl=GCL[r.Grade]||"#eff6ff";
+  const gcb=GCB[r.Grade]||"#bfdbfe";
+  const rc=r.Result==="PASS"?"#059669":"#dc2626";
+  const rcl=r.Result==="PASS"?"#ecfdf5":"#fef2f2";
+  const rcb=r.Result==="PASS"?"#a7f3d0":"#fecaca";
+  const ac=AC[r._i%AC.length];
+  document.getElementById("banner").innerHTML=`
+    <div class="b-left">
+      <div class="bav" style="background:${ac}">${r.Name[0]}</div>
+      <div>
+        <div class="b-name">${r.Name}</div>
+        <div class="b-meta">RANK #${r.Rank} &nbsp;·&nbsp; ${r.Total}/400 MARKS &nbsp;·&nbsp; 4 SUBJECTS</div>
+      </div>
+    </div>
+    <div class="b-right">
+      <div class="bstat">
+        <div class="bstat-val" style="color:${gc}">${r.Grade}</div>
+        <div class="bstat-lbl">Grade</div>
+      </div>
+      <div class="bstat">
+        <div class="bstat-val" style="color:var(--accent)">${r.Average}%</div>
+        <div class="bstat-lbl">Average</div>
+      </div>
+      <div class="bstat">
+        <div class="bstat-val" style="color:${rc}">${r.Result}</div>
+        <div class="bstat-lbl">Result</div>
+      </div>
+      <div style="background:${gcl};border:1px solid ${gcb};padding:8px 18px;border-radius:10px;text-align:center;">
+        <div style="font-size:22px;font-weight:800;color:${gc}">#${r.Rank}</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:2px;">Class Rank</div>
+      </div>
+    </div>
+  `;
+  document.getElementById("chartlbl").textContent=`${r.Name}'s Scores vs Class Average`;
+}
+
+function rChart(){
+  if(!filtered.length)return;
+  const r=filtered[ci];
+  const wrap=document.getElementById("chartWrap");
+  wrap.querySelectorAll(".cgrp").forEach(e=>e.remove());
+  document.getElementById("yax").innerHTML=[100,80,60,40,20,0].map(v=>`<span>${v}</span>`).join("");
+  document.getElementById("gov").innerHTML="<div class='gl'></div><div class='gl'></div><div class='gl'></div><div class='gl'></div><div class='gl'></div><div class='gl'></div>";
+  SUBS.forEach((s,i)=>{
+    const sc=r[s],ca=CAVG[s];
+    const diff=sc-ca;
+    const dc=diff>=0?"#059669":"#dc2626";
+    const g=document.createElement("div");g.className="cgrp";
+    g.innerHTML=`
+      <div class="cbars">
+        <div class="cbar cbar-s" style="height:${sc}%;transition:height .55s cubic-bezier(.4,0,.2,1) ${i*.08}s">
+          <div class="ctip">${r.Name}: ${sc}</div>
+        </div>
+        <div class="cbar cbar-a" style="height:${ca}%;transition:height .55s cubic-bezier(.4,0,.2,1) ${i*.08+.05}s">
+          <div class="ctip">Class Avg: ${ca}</div>
+        </div>
+      </div>
+      <div class="cxlbl">${s}</div>
+      <div class="cdiff" style="color:${dc}">${diff>=0?"+":""}${diff.toFixed(1)}</div>
+    `;
+    wrap.appendChild(g);
+  });
+}
+
+function rSubs(){
+  if(!filtered.length)return;
+  const r=filtered[ci];
+  const subColors=["#3b82f6","#0891b2","#059669","#d97706"];
+  document.getElementById("slist").innerHTML=SUBS.map((s,i)=>{
+    const sc=r[s],ca=CAVG[s];
+    const c=subColors[i];
+    const diff=sc-ca;
+    const dc=diff>=0?"#059669":"#dc2626";
+    return`<div class="sitem">
+      <div class="smeta">
+        <span class="sname">${s}</span>
+        <div class="spair">
+          <span class="savglbl">Avg ${ca}</span>
+          <span class="sscore" style="color:${c}">${sc}</span>
+        </div>
+      </div>
+      <div class="track">
+        <div class="fill" style="width:${sc}%;background:linear-gradient(90deg,${c}88,${c})"></div>
+        <div class="amk" style="left:${ca}%"></div>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:${dc};text-align:right;margin-top:2px">${diff>=0?"+":""}${diff.toFixed(1)} vs avg</div>
+    </div>`;
+  }).join("");
+
+  // Insight strip
+  const best=SUBS.reduce((a,s)=>r[s]>r[a]?s:a,SUBS[0]);
+  const weak=SUBS.reduce((a,s)=>r[s]<r[a]?s:a,SUBS[0]);
+  const above=SUBS.filter(s=>r[s]>CAVG[s]).length;
+  const gc=GC[r.Grade]||"#3b82f6";
+  const gcl=GCL[r.Grade]||"#eff6ff";
+  const gcb=GCB[r.Grade]||"#bfdbfe";
+  const rc=r.Result==="PASS"?"#059669":"#dc2626";
+  const rcl=r.Result==="PASS"?"#ecfdf5":"#fef2f2";
+  const rcb=r.Result==="PASS"?"#a7f3d0":"#fecaca";
+  document.getElementById("insight").innerHTML=`
+    <div class="ins-icon">📊</div>
+    <div class="ins-body">
+      <div class="ins-lbl">Performance Insight</div>
+      <div class="ins-txt">
+        <strong>${r.Name}</strong> excels in <strong>${best}</strong> (${r[best]}/100) and needs focus on <strong>${weak}</strong> (${r[weak]}/100). 
+        <strong>${above} of 4</strong> subjects are above class average.
+      </div>
+      <div class="ins-tags">
+        <span class="ins-tag" style="background:${gcl};color:${gc};border-color:${gcb}">Grade ${r.Grade}</span>
+        <span class="ins-tag" style="background:${rcl};color:${rc};border-color:${rcb}">${r.Result==="PASS"?"✅ Pass":"❌ Fail"}</span>
+        <span class="ins-tag" style="background:#eff6ff;color:#3b82f6;border-color:#bfdbfe">Rank #${r.Rank}</span>
+        <span class="ins-tag" style="background:#f5f5f5;color:#64748b;border-color:#e2e8f0">${above}/4 Above Avg</span>
+      </div>
+    </div>
+  `;
+}
+
+function rRank(){
+  if(!filtered.length)return;
+  const cur=filtered[ci];
+  const top10=[...ALL].sort((a,b)=>b.Average-a.Average).slice(0,10);
+  document.getElementById("rlist").innerHTML=top10.map((r,i)=>{
+    const isc=r.Name===cur.Name;
+    const ac=AC[r._i%AC.length];
+    const m=i===0?"🥇":i===1?"🥈":i===2?"🥉":r.Rank;
+    const gc=GC[r.Grade]||"#3b82f6";
+    const gcl=GCL[r.Grade]||"#eff6ff";
+    const gcb=GCB[r.Grade]||"#bfdbfe";
+    return`<div class="ritem${isc?" cur":""}">
+      <span class="rnum${i===0?" gold":""}">${m}</span>
+      <div class="rav" style="background:${ac}">${r.Name[0]}</div>
+      <span class="rname">${r.Name}${isc?` <span style="font-size:10px;color:var(--accent);font-weight:700">(you)</span>`:""}</span>
+      <span class="rbadge" style="background:${gcl};color:${gc};border-color:${gcb}">${r.Grade}</span>
+      <span class="ravg">${r.Average}%</span>
+    </div>`;
+  }).join("");
+}
+
+function rBottom(){
+  const gCnt={};GRADES.forEach(g=>gCnt[g]=0);
+  filtered.forEach(r=>gCnt[r.Grade]=(gCnt[r.Grade]||0)+1);
+  const maxG=Math.max(...Object.values(gCnt),1);
+  document.getElementById("gdist").innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:10px;height:120px;padding-bottom:26px;">
+      ${GRADES.map(g=>{
+        const cnt=gCnt[g]||0,h=cnt?Math.max((cnt/maxG)*86,4):2;
+        const c=GC[g],cl=GCL[g];
+        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="font-size:13px;font-weight:800;color:${c}">${cnt}</div>
+          <div style="width:100%;height:${h}px;background:${c};border-radius:5px 5px 0 0;opacity:.85;"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--text2)">${g}</div>
+        </div>`;
+      }).join("")}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${GRADES.map(g=>`<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-weight:600;">
+        <div style="width:8px;height:8px;border-radius:2px;background:${GC[g]}"></div>${g}: ${gCnt[g]||0}
+      </div>`).join("")}
+    </div>`;
+
+  const sA=SUBS.map(s=>filtered.length?+(filtered.reduce((a,r)=>a+r[s],0)/filtered.length).toFixed(1):0);
+  const maxS=Math.max(...sA,1);
+  const sc=["#3b82f6","#0891b2","#059669","#d97706"];
+  document.getElementById("subjavg").innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:10px;height:120px;padding-bottom:26px;">
+      ${SUBS.map((s,i)=>{
+        const v=sA[i],h=Math.max((v/maxS)*86,4),c=sc[i];
+        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="font-size:13px;font-weight:800;color:${c}">${v}%</div>
+          <div style="width:100%;height:${h}px;background:${c};border-radius:5px 5px 0 0;opacity:.85;"></div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2)">${s}</div>
+        </div>`;
+      }).join("")}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${SUBS.map((s,i)=>`<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);font-weight:600;">
+        <div style="width:8px;height:8px;border-radius:2px;background:${sc[i]}"></div>${s}: ${sA[i]}%
+      </div>`).join("")}
+    </div>`;
+}
+
+function rSide(){
+  const pa=filtered.filter(r=>r.Result==="PASS").length;
+  const fa=filtered.filter(r=>r.Result==="FAIL").length;
+  const avg=filtered.length?+(filtered.reduce((a,r)=>a+r.Average,0)/filtered.length).toFixed(1):0;
+  document.getElementById("sideGrid").innerHTML=`
+    <div class="sg-item"><div class="sg-val">${ALL.length}</div><div class="sg-lbl">Total</div></div>
+    <div class="sg-item"><div class="sg-val">${filtered.length}</div><div class="sg-lbl">Shown</div></div>
+    <div class="sg-item"><div class="sg-val" style="color:#059669">${pa}</div><div class="sg-lbl">Pass</div></div>
+    <div class="sg-item"><div class="sg-val" style="color:#dc2626">${fa}</div><div class="sg-lbl">Fail</div></div>
+    <div class="sg-item"><div class="sg-val" style="color:#3b82f6">${avg}%</div><div class="sg-lbl">Avg</div></div>
+    <div class="sg-item"><div class="sg-val">400</div><div class="sg-lbl">Max Marks</div></div>
+  `;
+}
+
+renderAll();
+</script>
+</body>
+</html>
